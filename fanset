@@ -1,0 +1,76 @@
+#!/bin/bash
+# fanset - Control NVIDIA GPU fan speeds (EVGA Ultra + Zotac Trinity)
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    cat << EOF
+Usage: $0 [GPU0_% | -] [GPU1_% | -]
+
+Examples:
+    $0              # Toggle: 55/85% <-> 0/0% (smart default)
+    $0 50           # Both GPUs to 50%
+    $0 50 75        # GPU0=50%     GPU1=75%
+    $0 100 -        # GPU0=100%    GPU1=current
+    $0 - 80         # GPU0=current GPU1=80%
+    $0 - -          # No change (useless but valid)
+
+Options:
+    -h, --help      Show this help
+EOF
+    exit 0
+fi
+
+# Environment for nvidia-settings (headless/root friendly)
+#NS="DISPLAY=:0 XAUTHORITY=/tmp/xauth.root nvidia-settings"
+
+# === Query current speeds (fan:0/1 = GPU0, fan:2/3 = GPU1) ===
+current0=$(DISPLAY=:0 XAUTHORITY=/tmp/xauth.root sudo nvidia-settings -q [fan:0]/GPUTargetFanSpeed -t 2>/dev/null || echo 0)
+current1=$(DISPLAY=:0 XAUTHORITY=/tmp/xauth.root sudo nvidia-settings -q [fan:2]/GPUTargetFanSpeed -t 2>/dev/null || echo 0)
+
+# Smart default when no arguments: toggle between "max load" and "off"
+if [[ $# -eq 0 ]]; then
+    if [[ $current0 -ge 50 || $current1 -ge 50 ]]; then
+        gpu0=0
+        gpu1=0
+        echo "Fans currently high → setting to 0% (off)"
+    else
+        gpu0=55
+        gpu1=85
+        echo "Fans low → setting to max load (55%/85%)"
+    fi
+else
+    # Parse arguments with "-" = keep current
+    gpu0="${1:--}"   # - means keep current0
+    gpu1="${2:--}"   # - means keep current1
+
+    [[ "$gpu0" == "-" ]] && gpu0="$current0"
+    [[ "$gpu1" == "-" ]] && gpu1="$current1"
+
+    # Single arg = apply to both
+    [[ -n "$1" && -z "$2" && "$1" != "-" ]] && gpu1="$gpu0"
+fi
+
+# Apply (always enable manual control)
+echo "Setting:  GPU0 fans → $gpu0%  (from $current0%)"
+echo "          GPU1 fans → $gpu1%  (from $current1%)"
+
+DISPLAY=:0 XAUTHORITY=/tmp/xauth.root sudo nvidia-settings \
+  -a [gpu:0]/GPUFanControlState=1 \
+  -a [gpu:1]/GPUFanControlState=1 \
+  -a [fan:0]/GPUTargetFanSpeed="$gpu0" \
+  -a [fan:1]/GPUTargetFanSpeed="$gpu0" \
+  -a [fan:2]/GPUTargetFanSpeed="$gpu1" \
+  -a [fan:3]/GPUTargetFanSpeed="$gpu1" \
+  2>/dev/null || true
+(m01) i@ai:~/bin$ fanset -h
+Usage: /home/i/bin/fanset [GPU0_% | -] [GPU1_% | -]
+
+Examples:
+    /home/i/bin/fanset              # Toggle: 55/85% <-> 0/0% (smart default)
+    /home/i/bin/fanset 50           # Both GPUs to 50%
+    /home/i/bin/fanset 50 75        # GPU0=50%     GPU1=75%
+    /home/i/bin/fanset 100 -        # GPU0=100%    GPU1=current
+    /home/i/bin/fanset - 80         # GPU0=current GPU1=80%
+    /home/i/bin/fanset - -          # No change (useless but valid)
+
+Options:
+    -h, --help      Show this help
