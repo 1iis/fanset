@@ -8,7 +8,7 @@ Useful on headless/servers.
 
 ## Usage
 
-One file: [`fanset`](/fanset), a Bash shell script.
+One file: [`fanset`](/fanset), a Bash script.
 
 ### Examples
 
