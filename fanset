@@ -61,16 +61,3 @@ DISPLAY=:0 XAUTHORITY=/tmp/xauth.root sudo nvidia-settings \
   -a [fan:2]/GPUTargetFanSpeed="$gpu1" \
   -a [fan:3]/GPUTargetFanSpeed="$gpu1" \
   2>/dev/null || true
-(m01) i@ai:~/bin$ fanset -h
-Usage: /home/i/bin/fanset [GPU0_% | -] [GPU1_% | -]
-
-Examples:
-    /home/i/bin/fanset              # Toggle: 55/85% <-> 0/0% (smart default)
-    /home/i/bin/fanset 50           # Both GPUs to 50%
-    /home/i/bin/fanset 50 75        # GPU0=50%     GPU1=75%
-    /home/i/bin/fanset 100 -        # GPU0=100%    GPU1=current
-    /home/i/bin/fanset - 80         # GPU0=current GPU1=80%
-    /home/i/bin/fanset - -          # No change (useless but valid)
-
-Options:
-    -h, --help      Show this help
